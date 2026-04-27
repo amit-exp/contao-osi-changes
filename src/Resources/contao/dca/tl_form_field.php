@@ -3,9 +3,7 @@
 use Contao\Config;
 use Contao\CoreBundle\Security\ContaoCorePermissions;
 use Contao\DataContainer;
-use Contao\Database;
 use Contao\FormModel;
-use Contao\Input;
 use Contao\System;
 
 // Add our custom 'multiple_choice_question' palette
@@ -25,11 +23,8 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['options']['inputType'] = 'multi_c
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['label']['eval']['maxlength'] = null;
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['label']['sql'] = "text NULL";
 
-// Add save_callback to 'name' for uniqueness check
-$GLOBALS['TL_DCA']['tl_form_field']['fields']['name']['save_callback'][] = array('tl_test_field', 'validateUniqueName');
-
-// Add oncopy_callback to 'tl_form_field'
-$GLOBALS['TL_DCA']['tl_form_field']['config']['oncopy_callback'][] = array('tl_test_field', 'updateNameOnCopy');
+// Set 'unique' => true for the 'name' field
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['name']['eval']['unique'] = true;
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields'] += [
     'label_image' => [
@@ -76,58 +71,4 @@ class tl_test_field extends \tl_form_field
     		return $fields;
         }
 	}
-
-    /**
-     * Check if the field name is unique within the same form (pid)
-     */
-    public function validateUniqueName($value, DataContainer $dc)
-    {
-        $objDuplicate = Database::getInstance()
-                        ->prepare("SELECT id FROM tl_form_field WHERE pid=? AND name=? AND id!=?")
-                        ->execute($dc->activeRecord->pid, $value, $dc->id);
-
-        if ($objDuplicate->numRows)
-        {
-            throw new \Exception(sprintf($GLOBALS['TL_LANG']['ERR']['unique'], $value));
-        }
-
-        return $value;
-    }
-
-    /**
-     * Append _copy to the name field when a record is duplicated
-     */
-    public function updateNameOnCopy($insertId, DataContainer $dc)
-    {
-        $db = Database::getInstance();
-        $objField = $db->prepare("SELECT * FROM tl_form_field WHERE id=?")
-                       ->limit(1)
-                       ->execute($insertId);
-
-        if ($objField->numRows)
-        {
-            $name = $objField->name;
-            $pid = $objField->pid;
-            
-            $newName = $name . '_copy';
-            $counter = 1;
-            
-            // Increment the name until it is unique
-            while (true)
-            {
-                $objCheck = $db->prepare("SELECT id FROM tl_form_field WHERE pid=? AND name=? AND id!=?")
-                               ->execute($pid, $newName, $insertId);
-
-                if (!$objCheck->numRows)
-                {
-                    break;
-                }
-
-                $newName = $name . '_copy_' . $counter++;
-            }
-            
-            $db->prepare("UPDATE tl_form_field SET name=? WHERE id=?")
-               ->execute($newName, $insertId);
-        }
-    }
 }
