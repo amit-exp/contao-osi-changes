@@ -3,9 +3,7 @@
 use Contao\Config;
 use Contao\CoreBundle\Security\ContaoCorePermissions;
 use Contao\DataContainer;
-use Contao\Database;
 use Contao\FormModel;
-use Contao\Input;
 use Contao\System;
 
 // Add our custom 'multiple_choice_question' palette
@@ -24,6 +22,9 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['options']['inputType'] = 'multi_c
 // Change the SQL definition of the “label” field to TEXT so Contao’s database updater will ALTER the column for you.
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['label']['eval']['maxlength'] = null;
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['label']['sql'] = "text NULL";
+
+// Set 'unique' => true for the 'name' field
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['name']['eval']['unique'] = true;
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields'] += [
     'label_image' => [
